@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aircraft Fleet Management MVP</title>
+    <style>
+        /* Base Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative; 
+        }
+        h1, h2 { color: #2c3e50; }
+
+        /* Secret Login Styling */
+        #secret-login-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 10px;
+            z-index: 100;
+        }
+        #secret-trigger {
+            width: 40px;
+            height: 40px;
+            background-color: #f4f7f6; 
+            cursor: pointer;
+            border-radius: 0 0 0 8px;
+        }
+        #secret-trigger:hover { background-color: #e2e8f0; } 
+        
+        #login-form {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+            border: 1px solid #ccc;
+        }
+
+        /* Admin Panel Styling */
+        .admin-panel {
+            background-color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: none; 
+        }
+        input[type="text"], input[type="password"], select, button {
+            padding: 10px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #2980b9; }
+        
+        /* Utility Button Colors */
+        .btn-success { background-color: #27ae60; }
+        .btn-success:hover { background-color: #2ecc71; }
+        .btn-danger { background-color: #e74c3c; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .btn-purple { background-color: #8e44ad; }
+        .btn-purple:hover { background-color: #9b59b6; }
+        .btn-outline { 
+            background-color: transparent; 
+            color: #e74c3c; 
+            border: 1px solid #e74c3c; 
+        }
+        .btn-outline:hover { background-color: #e74c3c; color: white; }
+
+        .admin-form {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .admin-form h3 { margin: 0 15px 0 0; width: 100%; margin-bottom: 10px; }
+        #addForm { border-left: 4px solid #8e44ad; }
+
+        /* Filter Bar */
+        .filter-bar {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .filter-bar strong { margin-right: 10px; }
+        .filter-btn {
+            background-color: #ecf0f1;
+            color: #333;
+            border: 1px solid #bdc3c7;
+            margin: 0;
+            min-width: 60px;
+        }
+        .filter-btn:hover { background-color: #bdc3c7; }
+        .filter-btn.active {
+            background-color: #2c3e50;
+            color: white;
+            border-color: #2c3e50;
+        }
+
+        /* Table & Inline Edit Styling */
+        .fleet-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .fleet-table th, .fleet-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        .fleet-table th {
+            background-color: #2c3e50;
+            color: white;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .fleet-table tr:hover { background-color: #f8fafc; }
+        
+        .inline-input {
+            width: 100%;
+            padding: 8px;
+            margin: 0;
+            box-sizing: border-box;
+            border: 2px solid #3498db; /* Highlights that it's in edit mode */
+        }
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 14px;
+            margin-right: 4px;
+            margin-bottom: 0;
+        }
+
+        /* Status Badges */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            display: inline-block;
+            text-align: center;
+            min-width: 80px;
+        }
+        .status-available { background-color: #d4edda; color: #155724; }
+        .status-maintenance { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+    <div id="secret-login-container">
+        <div id="secret-trigger" onclick="revealLogin()" title="Admin Login"></div>
+        <div id="login-form" style="display: none;">
+            <input type="password" id="adminPassword" placeholder="Enter Password" style="margin-bottom: 0; width: 150px;">
+            <button type="button" class="btn-purple" onclick="checkPassword()" style="margin-bottom: 0;">Unlock</button>
+        </div>
+    </div>
+
+    <h1>✈️ Fleet Management Dashboard</h1>
+
+    <div class="admin-panel" id="adminPanel">
+        <h2>Admin Controls</h2>
+        
+        <button type="button" class="btn-purple" onclick="openAddForm()">+ Add New Aircraft</button>
+        <button type="button" class="btn-outline" onclick="lockPanel()" style="float: right; margin-right: 0;">🔒 Lock Panel</button>
+        <br style="clear: both;">
+
+        <div id="addForm" class="admin-form" style="display: none;">
+            <h3>Add New Aircraft</h3>
+            <input type="text" id="addClass" placeholder="Class (C, D, E, F)" style="width: 130px;">
+            <input type="text" id="addFin" placeholder="Fin Number" style="width: 100px;">
+            <input type="text" id="addReg" placeholder="Registration" style="width: 150px;">
+            <input type="text" id="addType" placeholder="Aircraft Type" style="width: 150px;">
+            <select id="addStatus">
+                <option value="Available">Available</option>
+                <option value="Maintenance">Maintenance</option>
+            </select>
+            <button type="button" class="btn-success" onclick="saveNewAircraft()">Create</button>
+            <button type="button" class="btn-danger" onclick="closeAddForm()">Cancel</button>
+        </div>
+    </div>
+
+    <h2>Current Fleet Roster</h2>
+    
+    <div class="filter-bar">
+        <strong>Filter by Class:</strong>
+        <button type="button" class="filter-btn active" onclick="setFilter('All')">All</button>
+        <button type="button" class="filter-btn" onclick="setFilter('C')">C</button>
+        <button type="button" class="filter-btn" onclick="setFilter('D')">D</button>
+        <button type="button" class="filter-btn" onclick="setFilter('E')">E</button>
+        <button type="button" class="filter-btn" onclick="setFilter('F')">F</button>
+    </div>
+
+    <table class="fleet-table">
+        <thead>
+            <tr>
+                <th>Class</th>
+                <th>Fin number</th>
+                <th>Registration</th>
+                <th>Aircraft type</th>
+                <th>Status</th>
+                <th id="actionsHeader" style="display: none; width: 150px;">Actions</th> 
+            </tr>
+        </thead>
+        <tbody id="fleetTableBody">
+            </tbody>
+    </table>
+
+    <script>
+        // --- GLOBAL STATE ---
+        let isAdminUnlocked = false;
+        let editingRowId = null; // Keeps track of which row is currently being edited
+
+        // --- LOGIN LOGIC ---
+        function revealLogin() {
+            document.getElementById('secret-trigger').style.display = 'none';
+            document.getElementById('login-form').style.display = 'flex';
+            document.getElementById('adminPassword').focus();
+        }
+
+        function checkPassword() {
+            const pwd = document.getElementById('adminPassword').value;
+            if (pwd === 'dispatch') {
+                isAdminUnlocked = true;
+                document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('secret-login-container').style.display = 'none';
+                document.getElementById('adminPassword').value = ''; 
+                document.getElementById('actionsHeader').style.display = 'table-cell'; // Show actions column
+                renderFleet(); 
+            } else {
+                alert('Incorrect password. Access denied.');
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('secret-trigger').style.display = 'block';
+            }
+        }
+
+        function lockPanel() {
+            isAdminUnlocked = false;
+            editingRowId = null; // Cancel any active edits
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('secret-login-container').style.display = 'block';
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('secret-trigger').style.display = 'block';
+            document.getElementById('actionsHeader').style.display = 'none'; // Hide actions column
+            closeAddForm();
+            renderFleet();
+        }
+
+        document.getElementById("adminPassword").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                checkPassword();
+            }
+        });
+
+        // --- THE DATABASE LOGIC ---
+        const defaultFleetData = [
+            { id: 1, class: 'C', finNumber: '701', registration: 'N12345', aircraftType: 'Boeing 737-800', status: 'Available' },
+            { id: 2, class: 'C', finNumber: '702', registration: 'N11111', aircraftType: 'Boeing 737 MAX', status: 'Available' },
+            { id: 3, class: 'D', finNumber: '767', registration: 'N767BJ', aircraftType: 'Boeing 767-300', status: 'Available' },
+            { id: 4, class: 'E', finNumber: '777', registration: 'N777ER', aircraftType: 'Boeing 777-300ER', status: 'Maintenance' },
+            { id: 5, class: 'F', finNumber: '380', registration: 'N380US', aircraftType: 'Airbus A380', status: 'Available' }
+        ];
+
+        let fleetData = JSON.parse(localStorage.getItem('airlineFleetDB_v2')) || defaultFleetData;
+
+        function saveDatabase() {
+            localStorage.setItem('airlineFleetDB_v2', JSON.stringify(fleetData));
+        }
+
+        let currentClassFilter = 'All';
+
+        // --- BACKEND LOGIC ---
+        function setFilter(filterValue) {
+            currentClassFilter = filterValue;
+            editingRowId = null; // Cancel edit if filter changes
+            
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === filterValue) {
+                    btn.classList.add('active');
+                }
+            });
+            renderFleet();
+        }
+
+        function renderFleet() {
+            const tableBody = document.getElementById('fleetTableBody');
+            tableBody.innerHTML = ''; 
+            
+            let planesToDraw = fleetData;
+            if (currentClassFilter !== 'All') {
+                planesToDraw = fleetData.filter(aircraft => aircraft.class === currentClassFilter);
+            }
+            
+            planesToDraw.forEach(aircraft => {
+                const tr = document.createElement('tr');
+                
+                // If THIS is the row we are currently editing
+                if (aircraft.id === editingRowId) {
+                    tr.innerHTML = `
+                        <td>
+                            <select id="edit-class-${aircraft.id}" class="inline-input">
+                                <option value="C" ${aircraft.class === 'C' ? 'selected' : ''}>C</option>
+                                <option value="D" ${aircraft.class === 'D' ? 'selected' : ''}>D</option>
+                                <option value="E" ${aircraft.class === 'E' ? 'selected' : ''}>E</option>
+                                <option value="F" ${aircraft.class === 'F' ? 'selected' : ''}>F</option>
+                            </select>
+                        </td>
+                        <td><input type="text" id="edit-fin-${aircraft.id}" class="inline-input" value="${aircraft.finNumber}"></td>
+                        <td><input type="text" id="edit-reg-${aircraft.id}" class="inline-input" value="${aircraft.registration}"></td>
+                        <td><input type="text" id="edit-type-${aircraft.id}" class="inline-input" value="${aircraft.aircraftType}"></td>
+                        <td>
+                            <select id="edit-status-${aircraft.id}" class="inline-input">
+                                <option value="Available" ${aircraft.status === 'Available' ? 'selected' : ''}>Available</option>
+                                <option value="Maintenance" ${aircraft.status === 'Maintenance' ? 'selected' : ''}>Maintenance</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn-success action-btn" onclick="saveInlineEdit(${aircraft.id})">💾 Save</button>
+                            <button class="btn-danger action-btn" onclick="cancelInlineEdit()">Cancel</button>
+                        </td>
+                    `;
+                } else {
+                    // Standard read-only row
+                    let badgeClass = aircraft.status === 'Available' ? 'status-available' : 'status-maintenance';
+                    
+                    let rowHTML = `
+                        <td><span style="color: #7f8c8d; font-weight: 600; font-size: 1.1em;">${aircraft.class}</span></td>
+                        <td><strong>${aircraft.finNumber}</strong></td>
+                        <td><strong>${aircraft.registration}</strong></td>
+                        <td>${aircraft.aircraftType}</td>
+                        <td><span class="badge ${badgeClass}">${aircraft.status}</span></td>
+                    `;
+                    
+                    // Only add the action buttons if Admin is logged in
+                    if (isAdminUnlocked) {
+                        rowHTML += `
+                            <td>
+                                <button class="action-btn" onclick="startInlineEdit(${aircraft.id})">✏️ Edit</button>
+                                <button class="btn-danger action-btn" onclick="deleteAircraft(${aircraft.id})">🗑️</button>
+                            </td>
+                        `;
+                    }
+                    tr.innerHTML = rowHTML;
+                }
+                
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // --- INLINE EDITING LOGIC ---
+        function startInlineEdit(id) {
+            editingRowId = id;
+            renderFleet();
+        }
+
+        function cancelInlineEdit() {
+            editingRowId = null;
+            renderFleet();
+        }
+
+        function saveInlineEdit(id) {
+            const aircraft = fleetData.find(p => p.id === id);
+            if (aircraft) {
+                // Grab the new values directly from the table inputs
+                aircraft.class = document.getElementById(`edit-class-${id}`).value;
+                aircraft.finNumber = document.getElementById(`edit-fin-${id}`).value;
+                aircraft.registration = document.getElementById(`edit-reg-${id}`).value.toUpperCase();
+                aircraft.aircraftType = document.getElementById(`edit-type-${id}`).value;
+                aircraft.status = document.getElementById(`edit-status-${id}`).value;
+
+                saveDatabase(); 
+                editingRowId = null; // Close edit mode
+                renderFleet(); // Redraw the table
+            }
+        }
+
+        function deleteAircraft(id) {
+            if (confirm("Are you sure you want to permanently delete this aircraft?")) {
+                fleetData = fleetData.filter(aircraft => aircraft.id !== id);
+                saveDatabase(); 
+                renderFleet();
+            }
+        }
+
+        // --- ADD NEW AIRCRAFT LOGIC ---
+        function openAddForm() {
+            document.getElementById('addForm').style.display = 'flex';
+        }
+
+        function closeAddForm() {
+            document.getElementById('addForm').style.display = 'none';
+            document.getElementById('addClass').value = '';
+            document.getElementById('addFin').value = '';
+            document.getElementById('addReg').value = '';
+            document.getElementById('addType').value = '';
+            document.getElementById('addStatus').value = 'Available';
+        }
+
+        function saveNewAircraft() {
+            const newClass = document.getElementById('addClass').value.toUpperCase(); 
+            const newFin = document.getElementById('addFin').value;
+            const newReg = document.getElementById('addReg').value.toUpperCase(); 
+            const newType = document.getElementById('addType').value;
+            const newStatus = document.getElementById('addStatus').value;
+
+            if (!newClass || !newFin || !newReg || !newType) {
+                alert("Please fill out all the aircraft details before saving.");
+                return;
+            }
+
+            const newId = fleetData.length > 0 ? Math.max(...fleetData.map(p => p.id)) + 1 : 1;
+
+            fleetData.push({
+                id: newId,
+                class: newClass,
+                finNumber: newFin,
+                registration: newReg,
+                aircraftType: newType,
+                status: newStatus
+            });
+
+            saveDatabase(); 
+            closeAddForm();
+            renderFleet();
+        }
+
+        // --- INITIALIZATION ---
+        renderFleet();
+    </script>
+</body>
+</html>
