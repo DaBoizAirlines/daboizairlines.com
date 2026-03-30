@@ -8,8 +8,8 @@
         /* Base Styling - Dark Theme */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212; /* Deep dark background */
-            color: #e0e0e0; /* Soft white text */
+            background-color: #121212;
+            color: #e0e0e0;
             max-width: 1100px;
             margin: 0 auto;
             padding: 20px;
@@ -27,7 +27,7 @@
             padding-bottom: 15px;
         }
         .company-logo {
-            height: 50px; /* Adjust this to fit your specific logo */
+            height: 50px;
             width: auto;
             border-radius: 4px;
         }
@@ -177,7 +177,7 @@
             padding: 8px;
             margin: 0;
             box-sizing: border-box;
-            border: 2px solid #8e44ad; /* Purple highlight for edit mode */
+            border: 2px solid #8e44ad;
             background-color: #121212;
             color: white;
         }
@@ -198,9 +198,9 @@
             text-align: center;
             min-width: 80px;
         }
-        /* Dark mode friendly badge colors */
+        /* Updated badge colors for Available vs In Use */
         .status-available { background-color: rgba(39, 174, 96, 0.2); color: #2ecc71; border: 1px solid #27ae60; }
-        .status-maintenance { background-color: rgba(192, 57, 43, 0.2); color: #e74c3c; border: 1px solid #c0392b; }
+        .status-in-use { background-color: rgba(243, 156, 18, 0.2); color: #f39c12; border: 1px solid #e67e22; }
     </style>
 </head>
 <body>
@@ -215,7 +215,7 @@
 
     <div class="header-container">
         <img src="https://via.placeholder.com/150x50?text=YOUR+LOGO+HERE" alt="Company Logo" class="company-logo">
-        <h1>✈️ Da Boiz Airlines Fleet</h1>
+        <h1>✈️ Fleet Management Dashboard</h1>
     </div>
 
     <div class="admin-panel" id="adminPanel">
@@ -233,7 +233,7 @@
             <input type="text" id="addType" placeholder="Aircraft Type" style="width: 150px;">
             <select id="addStatus">
                 <option value="Available">Available</option>
-                <option value="Maintenance">Maintenance</option>
+                <option value="In Use">In Use</option>
             </select>
             <button type="button" class="btn-success" onclick="saveNewAircraft()">Create</button>
             <button type="button" class="btn-danger" onclick="closeAddForm()">Cancel</button>
@@ -267,38 +267,33 @@
     </table>
 
     <script type="module">
-        // 1. IMPORT FIREBASE DIRECTLY FROM GOOGLE'S SERVERS
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // 2. PASTE YOUR FIREBASE CONFIG HERE
+        // *** PASTE YOUR REAL FIREBASE CONFIG HERE ***
         const firebaseConfig = {
-       apiKey: "AIzaSyCV-MGyNMl7u0vS60dOTbB6pcjcTCpKWjk",
-       authDomain: "da-boiz-airline-fleet.firebaseapp.com",
-       projectId: "da-boiz-airline-fleet",
-       storageBucket: "da-boiz-airline-fleet.firebasestorage.app",
-       messagingSenderId: "1001399867895",
-       appId: "1:1001399867895:web:0ddcfdec862fd17057f6f2"
-       };
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-        // 3. INITIALIZE FIREBASE
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const fleetCollection = collection(db, "fleet");
 
-        // --- GLOBAL STATE ---
         let isAdminUnlocked = false;
         let editingRowId = null; 
         let currentClassFilter = 'All';
         let fleetData = []; 
 
-        // --- REAL-TIME DATABASE SYNC ---
         onSnapshot(fleetCollection, (snapshot) => {
             fleetData = [];
             snapshot.forEach((doc) => {
                 fleetData.push({ id: doc.id, ...doc.data() });
             });
-            // Sort data so the table stays organized
             fleetData.sort((a, b) => {
                 if(a.class !== b.class) return a.class.localeCompare(b.class);
                 return a.finNumber.localeCompare(b.finNumber);
@@ -306,7 +301,6 @@
             renderFleet();
         });
 
-        // --- ATTACH FUNCTIONS TO WINDOW ---
         window.revealLogin = function() {
             document.getElementById('secret-trigger').style.display = 'none';
             document.getElementById('login-form').style.display = 'flex';
@@ -388,7 +382,7 @@
                         <td>
                             <select id="edit-status-${aircraft.id}" class="inline-input">
                                 <option value="Available" ${aircraft.status === 'Available' ? 'selected' : ''}>Available</option>
-                                <option value="Maintenance" ${aircraft.status === 'Maintenance' ? 'selected' : ''}>Maintenance</option>
+                                <option value="In Use" ${aircraft.status === 'In Use' ? 'selected' : ''}>In Use</option>
                             </select>
                         </td>
                         <td>
@@ -397,7 +391,7 @@
                         </td>
                     `;
                 } else {
-                    let badgeClass = aircraft.status === 'Available' ? 'status-available' : 'status-maintenance';
+                    let badgeClass = aircraft.status === 'Available' ? 'status-available' : 'status-in-use';
                     let rowHTML = `
                         <td><span style="color: #7f8c8d; font-weight: 600; font-size: 1.1em;">${aircraft.class}</span></td>
                         <td><strong>${aircraft.finNumber}</strong></td>
@@ -443,7 +437,6 @@
             document.getElementById('addStatus').value = 'Available';
         };
 
-        // --- FIREBASE DATABASE ACTIONS ---
         window.saveNewAircraft = async function() {
             const newClass = document.getElementById('addClass').value.toUpperCase(); 
             const newFin = document.getElementById('addFin').value;
